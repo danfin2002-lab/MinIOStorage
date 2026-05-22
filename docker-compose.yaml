@@ -7,8 +7,8 @@ services:
       - minio-storage:/data
       # - minio-config:/root/.minio
     environment:
-      - MINIO_ROOT_USER=minioDaniel
-      - MINIO_ROOT_PASSWORD=root1234
+      - MINIO_ROOT_USER=${MIO_ACCESS_KEY}
+      - MINIO_ROOT_PASSWORD=${MIO_SECRET_KEY}
     command: server /data --console-address ":9001"
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]

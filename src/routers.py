@@ -21,7 +21,7 @@ async def put_file(data: FilePutSchema, file_service: FileServiceDep)-> FileGetS
     response_model = list[FileGetSchema]
 )
 async def get_metadata_files(file_service: FileServiceDep)->list[FileGetSchema]:
-    result = await file_service.get_metadata()
+    result = file_service.get_metadata()
     return result
 
 

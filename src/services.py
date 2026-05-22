@@ -11,7 +11,7 @@ class FileService:
 		self.repository = repository
 	
 	async def upload_file(self, data: FilePutSchema)->FileGetSchema:
-		hash_source_file = compute_sha256(data.source_file)
+		hash_source_file = await compute_sha256(data.source_file)
 		
 		existing_hash = await self.repository.check_filehash_by_hash(hash_source_file)
 		if existing_hash is not None:
@@ -42,7 +42,7 @@ class FileService:
 		
 		return res
 		
-	async def get_metadata(self)->list[FileGetSchema]:
+	def get_metadata(self)->list[FileGetSchema]:
 		try:
 			objects_list = client.list_objects(bucket_name, recursive = True)
 		except S3Error as err:
