@@ -11,7 +11,15 @@ class FilePutSchema(BaseModel):
 class FileDeleteSchema(BaseModel):
 	destination_file: str255
 	
-class FileGetSchema(BaseModel):
+class MetadataGetSchema(BaseModel):
 	path: str255
 	size: int = Field(..., ge = 0)
 	last_modified: datetime
+	
+class FileGetSchema(BaseModel):
+	destination_file: str255
+	
+class PredictSendSchema(BaseModel):
+	pass
+
+#TODO доделать

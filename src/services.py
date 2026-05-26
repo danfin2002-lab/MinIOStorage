@@ -1,16 +1,17 @@
 from minio import S3Error
 
 from src.utils.hashing import compute_sha256
-from src.schemas import FilePutSchema, FileGetSchema, FileDeleteSchema
+from src.schemas import FilePutSchema, MetadataGetSchema, FileDeleteSchema, FileGetSchema
 from fastapi import HTTPException
 from src.minio_settings import client, bucket_name
 from src.repository import FileHashRepository
+import mimetypes
 
 class FileService:
 	def __init__(self, repository: FileHashRepository) -> None:
 		self.repository = repository
 	
-	async def upload_file(self, data: FilePutSchema)->FileGetSchema:
+	async def upload_file(self, data: FilePutSchema)->MetadataGetSchema:
 		hash_source_file = await compute_sha256(data.source_file)
 		
 		existing_hash = await self.repository.check_filehash_by_hash(hash_source_file)
@@ -34,7 +35,7 @@ class FileService:
 		
 		obj = client.stat_object(bucket_name, data.destination_file)
 		
-		res = FileGetSchema(
+		res = MetadataGetSchema(
 			path = data.destination_file,
 			size = obj.size,
 			last_modified = obj.last_modified
@@ -42,7 +43,7 @@ class FileService:
 		
 		return res
 		
-	def get_metadata(self)->list[FileGetSchema]:
+	def get_metadata(self)->list[MetadataGetSchema]:
 		try:
 			objects_list = client.list_objects(bucket_name, recursive = True)
 		except S3Error as err:
@@ -51,7 +52,7 @@ class FileService:
 		result = []
 		for obj in objects_list:
 			result.append(
-				FileGetSchema(
+				MetadataGetSchema(
 					path=obj.object_name,
 					size=obj.size,
 					last_modified=obj.last_modified
@@ -73,4 +74,16 @@ class FileService:
 		
 		existing_filehash = await self.repository.check_filehash_by_path(data.destination_file)
 		await self.repository.delete_filehash(existing_filehash)
+		
+	def get_file(self, destination_file: str): #Должен быть на выходе либо файл для скачивания или ссылка что ли
+		try:
+			client.stat_object(bucket_name, destination_file)
+		except S3Error:
+			raise HTTPException(status_code=404, detail="File not found")
+		
+		response = client.get_object(bucket_name, destination_file)#Возвращает поток байтов
+		
+		content_type = mimetypes.guess_type(destination_file)[0] or "application/octet-stream"#Определяем content_type по расширению файла
+
+		return response, content_type
 		
