@@ -19,6 +19,3 @@ async def compute_sha256(file_path: str)->str:
 				break
 			sha256.update(block) # Каждый прочитанный блок обновляет текущее хэш-значение
 	return sha256.hexdigest()
-
-
-#TODO - что такое итератор? Загуглить.

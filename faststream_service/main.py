@@ -1,35 +1,42 @@
-pip install 'faststream[kafka]' #TODO to requirements.txt
+#TODO Заворачиваю всё в докер
+import os
 
-Before running the service, install FastStream CLI using the following command:
-pip install "faststream[cli]" #TODO to requirements.txt
-
-
-To run the service, use the FastStream CLI command and pass the module (in this case, the file where the app implementation is located) and the app symbol to the command.
-faststream run basic:app --reload #TODO Change this string
-
-#Publisher - издатель
-#Subscriber - подписчик
-
-from pydantic import BaseModel, Field, PositiveInt
-from faststream import FastStream
+from dotenv import load_dotenv
 from faststream.rabbit import RabbitBroker
+from faststream import FastStream
+from faststream.rabbit import RabbitQueue
+from utils.check_filetype import check_filetype
+from minio_settings import client, bucket_name
+from AIPart.base import process_image, save_new_image
 
-broker = RabbitBroker("amqp://guest:guest@localhost:5672/")#TODO to .env
+
+load_dotenv(dotenv_path=".env")
+
+container_name_from_env = os.getenv('DB_TESTING_CONTAINER_NAME')
+
+host = os.getenv('BROKER_HOST')
+username = os.getenv('BROKER_USERNAME')
+pwd = os.getenv('BROKER_PASSWORD')
+port = os.getenv('BROKER_PORT')
+
+broker = RabbitBroker(f"amqp://{username}:{pwd}@{host}:{port}/")
+#broker = RabbitBroker("amqp://guest:guest@localhost:5672/")
+
 app = FastStream(broker)
 
-class User(BaseModel):
-    user: str = Field(..., examples=["John"])
-    user_id: PositiveInt = Field(..., examples=["1"])
+file_path = ""
 
-
-@broker.subscriber("in-queue")
-@broker.publisher("out-queue")
-async def handle_msg(data: User) -> str:
-    return f"User: {data.user} - {data.user_id} registered"
-	
-"""@broker.subscriber("in-queue")
-@broker.publisher("out-queue")
-async def handler(msg: RabbitMessage) -> None:
-    await msg.ack()  # control brokers' acknowledgement p	
-	
-await broker.publish("Message", "in-queue")"""
+super_queue = RabbitQueue(name="super", durable=True)
+#В этом файле это будет единственная функция
+@broker.subscriber(super_queue)
+async def handle_msg(msg_body: str):
+	print("All is Okey!!!")
+	print(msg_body)
+	file_path = msg_body
+	file_is_image = check_filetype(client, bucket_name, file_path)
+	print(f"Файл является изображением: {file_is_image}")
+	if not file_is_image:
+		print("Файл не является изображением")
+		return
+	new_image = process_image(client, bucket_name, file_path)
+	await save_new_image(client, bucket_name, file_path, new_image)

@@ -34,6 +34,35 @@ services:
       retries: 3
     volumes: #Тома данных для БД
       - db-data:/var/lib/postgresql/data
+  
+  
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+  
+  testing_db:
+    image: postgres:16.4
+    container_name: ${DB_TESTING_CONTAINER_NAME}
+    environment:
+        POSTGRES_PASSWORD: ${DB_TESTING_PASS}
+        POSTGRES_USER: ${DB_TESTING_USER}
+        POSTGRES_DB: ${DB_TESTING_NAME}
+    env_file:
+      - .env
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
 volumes:
   minio-storage:
   db-data:

@@ -8,10 +8,10 @@ str255nf = Annotated[str, mapped_column(String(255), nullable=False)]
 
 class Base(DeclarativeBase):
 	pass
-
+	
 class FileHash(Base):
 	__tablename__ = "file_hashes"
-
+	
 	id: Mapped[intpk]
 	hash: Mapped[str64] = mapped_column(index=True, unique=True)
-	path_file: Mapped[str255nf]#Путь в бакете
+	path_file: Mapped[str255nf]

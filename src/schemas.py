@@ -20,6 +20,4 @@ class FileGetSchema(BaseModel):
 	destination_file: str255
 	
 class PredictSendSchema(BaseModel):
-	pass
-
-#TODO доделать
+	destination_file: str255
